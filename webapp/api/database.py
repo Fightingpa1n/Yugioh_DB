@@ -25,9 +25,9 @@ def init_db():
 def add_test_data():
     db:db_connection.DBConnection = db_connection.get_db() #get db connection
 
-    db.query("INSERT INTO cards (id, type_id, name, description) VALUES (1, 1, 'Blue-Eyes White Dragon', 'This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale.')")
-    db.query("INSERT INTO users (id, username) VALUES (1, 'testuser')")
-    db.query("INSERT INTO user_cards (user_id, card_id, quantity) VALUES (1, 1, 3)")
+    db.execute("INSERT INTO cards (id, type_id, name, description) VALUES (1, 1, 'Blue-Eyes White Dragon', 'This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale.')")
+    db.execute("INSERT INTO users (id, username) VALUES (1, 'testuser')")
+    db.execute("INSERT INTO user_cards (user_id, card_id, quantity) VALUES (1, 1, 3)")
 
     return {"status": "success", "message": "Test data added"}, 200
 
