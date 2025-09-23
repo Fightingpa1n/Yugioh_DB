@@ -16,7 +16,7 @@ def init_db():
     #run initialization script (db/init/init.sql) which then runs all other scripts in sequence to set up the database
     with open(INIT_SQL_PATH, 'r') as f:
         init_script = f.read()
-        db.execute_many(init_script)
+        db.execute_script(init_script)
 
     return {"status": "success", "message": "Database initialized"}, 200
 

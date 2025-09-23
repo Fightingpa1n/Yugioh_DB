@@ -32,7 +32,7 @@ CREATE TABLE `users` (
     `username` varchar(50) NOT NULL,
     
     PRIMARY KEY (`id`)
-)
+);
 
 CREATE TABLE `user_cards` (
     `user_id` int,
