@@ -1,0 +1,10 @@
+{
+    "container_name": "yugioh_db",
+    "db": {
+        "host": "localhost",
+        "port": 3306,
+        "name": "ygo",
+        "user": "Unnamed",
+        "password": "<ChangeMePls>"
+    }
+}

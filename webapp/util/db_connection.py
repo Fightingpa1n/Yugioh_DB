@@ -70,11 +70,12 @@ def get_db():
         
         with open(CONFIG_PATH) as config_file:
             config = json.load(config_file)
-            db_host = config.get("db_host")
-            db_port = config.get("db_port")
-            db_name = config.get("db_name")
-            db_user = config.get("db_user")
-            db_password = config.get("db_password")
+            db_config = config.get("db", {})
+            db_host = db_config.get("host")
+            db_port = db_config.get("port")
+            db_name = db_config.get("name")
+            db_user = db_config.get("user")
+            db_password = db_config.get("password")
         g.db = DBConnection(db_host, db_port, db_name, db_user, db_password)
     return g.db
 

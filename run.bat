@@ -1,0 +1,1 @@
+:: this is the run bat file, it runs the python server and opens the browser
