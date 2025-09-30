@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from webapp.util import db_connection
+from util import db_connection
 import os
 
 bp = Blueprint('api', __name__, url_prefix='/db')
@@ -23,7 +23,7 @@ def init_db():
 
 @bp.route('/add_test_data', methods=['GET', 'POST'])
 def add_test_data():
-    db:db_connection.DBConnection = db_connection.get_db() #get db connection
+    db = db_connection.get_db() #get db connection
 
     db.execute("INSERT INTO cards (id, type_id, name, description) VALUES (1, 1, 'Blue-Eyes White Dragon', 'This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale.')")
     db.execute("INSERT INTO users (id, username) VALUES (1, 'testuser')")

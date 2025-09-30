@@ -5,44 +5,25 @@ import docker.errors
 import json
 import subprocess
 import requests
+from util.config import get_config, CARDS_INIT_PATH, COLLECTION_INIT_PATH
+from util.db_connection import get_db_connection, DBConnection
+from init.ygo_api import fetch_all_cards_data
 
+try: #Load config or create a default one
+    config = get_config()
+    container_name:str = config.get("container_name", "yugioh_db")
+    db_settings:dict = config.get("db", {})
+    db_host:str = db_settings.get("host", "localhost")
+    db_port:int = db_settings.get("port", 3306)
+    db_name:str = db_settings.get("name", "ygo")
+    db_user:str = db_settings.get("user", "user1")
+    db_password:str = db_settings.get("password", "password")
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(ROOT_DIR, "test_config.json")
-CARDS_INIT_PATH = os.path.join(ROOT_DIR, "db", "cards_init.sql")
-COLLECTION_INIT_PATH = os.path.join(ROOT_DIR, "db", "collection_init.sql")
-
-import sys
-sys.path.insert(0, ROOT_DIR)  #allow imports from root
-
-from webapp.util.db_connection import DBConnection
-from webapp.util.ygo_api import fetch_all_cards_data
-
-
-default_config = {
-    "container_name": "yugioh_db",
-    "db": {
-        "host":  "localhost",
-        "port":  3306,
-        "name":  "ygo",
-        "user":  "Unnamed",
-        "password":  "<ChangeMePls>"
-    }
-}
-
-config = {}
-
-if not os.path.exists(CONFIG_PATH):
-    with open(CONFIG_PATH, 'w') as f:
-        json.dump(default_config, f, indent=4)
-    print(f"Created default config file at {CONFIG_PATH}. Please edit it with your database settings.")
+except FileNotFoundError as e:
+    print(e)
     input("Press Enter to exit...")
-    exit(0)
-else:
-    with open(CONFIG_PATH, 'r') as f:
-        default_config.update(json.load(f))
-        config = default_config
-    print(f"Loaded config from {CONFIG_PATH}")
+    exit(1)
+
 
 def is_docker_running():
     try:
@@ -58,11 +39,9 @@ if not is_docker_running():
 
 client = docker.from_env()
 try:
-
-    #remove existing container if it exists
-    try:
-        existing_container = client.containers.get(config["container_name"])
-        print(f"Removing existing container {config['container_name']}...")
+    try: #remove existing container if it exists
+        existing_container = client.containers.get(container_name)
+        print(f"Removing existing container {container_name}...")
         existing_container.stop()
         existing_container.remove()
         print("Existing container removed.")
@@ -75,18 +54,17 @@ try:
     # Run the container
     container = client.containers.run(
         "mysql:8.0",
-        name=config["container_name"],
+        name=container_name,
         environment={
-            "MYSQL_ROOT_PASSWORD": config["db"]["password"],
-            "MYSQL_DATABASE": config["db"]["name"],
-            "MYSQL_USER": config["db"]["user"],
-            "MYSQL_PASSWORD": config["db"]["password"]
+            "MYSQL_ROOT_PASSWORD": db_password,
+            "MYSQL_DATABASE": db_name,
+            "MYSQL_USER": db_user,
+            "MYSQL_PASSWORD": db_password,
         },
-        ports={f"{config['db']['port']}/tcp": config['db']['port']},
+        ports={f"{db_port}/tcp": db_port},
         detach=True,
     )
     print(f"Container {container.name} started with ID {container.id}")
-
 
 except Exception as e:
     print(f"Error starting container: {e}")
@@ -102,7 +80,7 @@ time.sleep(5)  # Initial wait before checking
 max_retries = 10
 for i in range(max_retries):
     exit_code, output = container.exec_run(
-        cmd=f"mysqladmin ping -h {config['db']['host']} -P {config['db']['port']} -u {config['db']['user']} -p{config['db']['password']}",
+        cmd=f"mysqladmin ping -h {db_host} -P {db_port} -u {db_user} -p{db_password}",
         demux=True
     )
     if exit_code == 0 and b'mysqld is alive' in output[0]:
@@ -116,14 +94,8 @@ else:
     input("Press Enter to exit...")
     exit(1)
 
-#fill database with inital stuff
-db:DBConnection = DBConnection(
-    db_host=config["db"]["host"],
-    db_port=config["db"]["port"],
-    db_name=config["db"]["name"],
-    db_user=config["db"]["user"],
-    db_password=config["db"]["password"]
-)
+
+db:DBConnection = get_db_connection()
 
 print("Initializing main tables...")
 with open(CARDS_INIT_PATH, 'r', encoding='utf-8') as f:
@@ -137,14 +109,14 @@ with open(COLLECTION_INIT_PATH, 'r', encoding='utf-8') as f:
     db.execute_script(collection_sql)
 print("Collection tables initialized.")
 
-print("Fetching card data from YGOProDeck API (this may take a while)...")
-all_cards, sets = fetch_all_cards_data()
-print(f"Fetched data for {sum(len(cards) for cards in all_cards.values())} cards across {len(sets)} sets.")
+# print("Fetching card data from YGOProDeck API (this may take a while)...")
+# all_cards, sets = fetch_all_cards_data()
+# print(f"Fetched data for {sum(len(cards) for cards in all_cards.values())} cards across {len(sets)} sets.")
 
-print("adding sets to database...")
-for card_set in sets:
-    pass #TODO: insert sets into db
-print("Sets added to database.")
+# print("adding sets to database...")
+# for card_set in sets:
+#     pass #TODO: insert sets into db
+# print("Sets added to database.")
 
 
 # print("Adding cards to database (this may take a while)...")

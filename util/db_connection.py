@@ -3,9 +3,7 @@ import json
 import mysql.connector
 import os
 
-
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-CONFIG_PATH = os.path.join(REPO_ROOT, "config.json")
+from util.config import get_config
 
 class DBConnection:
     """Database connection class. Handles connecting to the database and executing queries."""
@@ -47,35 +45,44 @@ class DBConnection:
         finally:
             cur.close()
 
-    def execute_script(self, script_text: str):
-        cur = self.connection.cursor()
+    def execute_script(self, script_text:str):
+        cursor = self.connection.cursor()
         try:
-            # naive split is fine for our simple DDL (no stored procs)
-            statements = [s.strip() for s in script_text.split(";")]
-            for stmt in statements:
-                if not stmt:
-                    continue
-                # skip single-line comments
-                if stmt.startswith("--") or stmt.startswith("#"):
-                    continue
-                cur.execute(stmt)
+            results = cursor.execute(script_text, multi=True)
+            if results:
+                for result in results:
+                    try: result.fetchall()
+                    except: pass
             self.connection.commit()
         finally:
-            cur.close()
+            cursor.close()
 
-
-def get_db():
+def get_db() -> DBConnection:
     """Get the database connection."""
     if 'db' not in g:
-        
-        with open(CONFIG_PATH) as config_file:
-            config = json.load(config_file)
+        try:
+            config = get_config()
             db_config = config.get("db", {})
             db_host = db_config.get("host")
             db_port = db_config.get("port")
             db_name = db_config.get("name")
             db_user = db_config.get("user")
             db_password = db_config.get("password")
-        g.db = DBConnection(db_host, db_port, db_name, db_user, db_password)
+            g.db = DBConnection(db_host, db_port, db_name, db_user, db_password)
+        except Exception as e:
+            print(f"Error connecting to database: {e}")
+            raise e
     return g.db
 
+def get_db_connection() -> DBConnection:
+    """Get the database connection for outside flask app stuff"""
+    config = get_config()
+    db_config = config.get("db", {})
+    db_host = db_config.get("host")
+    db_port = db_config.get("port")
+    db_name = db_config.get("name")
+    db_user = db_config.get("user")
+    db_password = db_config.get("password")
+    return DBConnection(db_host, db_port, db_name, db_user, db_password)
+    
+    
