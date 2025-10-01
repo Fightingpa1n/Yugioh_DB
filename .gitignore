@@ -6,3 +6,4 @@ assets/card_images/*
 assets/small_card_images/*
 all_cards.json
 test.py
+tts/decks/*
