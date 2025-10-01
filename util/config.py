@@ -3,8 +3,9 @@ import json
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) #root directory
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json") #config file path
-CARDS_INIT_PATH = os.path.join(ROOT_DIR, "db", "cards_init.sql") #cards init file path
-COLLECTION_INIT_PATH = os.path.join(ROOT_DIR, "db", "collection_init.sql") #collection init file path
+CARDS_INIT_PATH = os.path.join(ROOT_DIR, "init", "cards_init.sql") #cards init file path
+COLLECTION_INIT_PATH = os.path.join(ROOT_DIR, "init", "collection_init.sql") #collection init file path
+VIEW_INIT_PATH = os.path.join(ROOT_DIR, "init", "views_init.sql") #views init file path
 
 default_config = {
     "container_name": "yugioh_db",

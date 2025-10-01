@@ -1,13 +1,10 @@
-import os
 import time
 import docker
 import docker.errors
-import json
 import subprocess
 import requests
-from util.config import get_config, CARDS_INIT_PATH, COLLECTION_INIT_PATH
+from util.config import get_config, CARDS_INIT_PATH, COLLECTION_INIT_PATH, VIEW_INIT_PATH
 from util.db_connection import get_db_connection, DBConnection
-from init.ygo_api import fetch_all_cards_data
 
 try: #Load config or create a default one
     config = get_config()
@@ -72,7 +69,6 @@ except Exception as e:
     input("Press Enter to exit...")
     exit(1)
 
-
 #wait until the db is ready to accept connections
 
 print("Waiting for database to be ready...", end="", flush=True)
@@ -109,42 +105,33 @@ with open(COLLECTION_INIT_PATH, 'r', encoding='utf-8') as f:
     db.execute_script(collection_sql)
 print("Collection tables initialized.")
 
-# print("Fetching card data from YGOProDeck API (this may take a while)...")
-# all_cards, sets = fetch_all_cards_data()
-# print(f"Fetched data for {sum(len(cards) for cards in all_cards.values())} cards across {len(sets)} sets.")
+print("Initializing views...")
+with open(VIEW_INIT_PATH, 'r', encoding='utf-8') as f:
+    views_sql = f.read()
+    db.execute_script(views_sql)
+print("Views initialized.")
 
-# print("adding sets to database...")
-# for card_set in sets:
-#     pass #TODO: insert sets into db
-# print("Sets added to database.")
-
-
-# print("Adding cards to database (this may take a while)...")
-# for card_type, cards in all_cards.items():
-#     print(f"Adding {len(cards)} {card_type} cards...")
-
-#     #add folder for each card type
-#     image_folder = os.path.join(ROOT_DIR, "db", "card_images", card_type)
-#     os.makedirs(image_folder, exist_ok=True)
-
-#     for card in cards:
-#         image_path = os.path.join(image_folder, f"{card['id']}.jpg")
-#         card_id = db.execute("""
-#             INSERT INTO cards () VALUES
-#                 (
-#                 );
-#         """, [])
-#         #download image
-#         if 'image_url_small' in card and card['image_url_small']:
-#             try:
-#                 img_data = requests.get(card['image_url_small'], timeout=10).content
-#                 with open(image_path, 'wb') as img_file:
-#                     img_file.write(img_data)
-#             except Exception as e:
-#                 print(f"Failed to download image for card ID {card['id']}: {e}")
-#         time.sleep(0.1) #slight delay to avoid hammering the API
-# print("Cards added to database.")
-
+print("Database schema setup complete.")
 db.close()
 
-print("Initialization complete. You can now run the app using run.bat")
+print("Initialization complete")
+
+answer = input("Would you like to populate the database with card data now? (y/n): ").strip().lower()
+if answer == 'y':
+    try:
+        print("Trying to populate the database, This might take a few hours... please don't close this window...")
+        print("Starting webapp to populate database...")
+        webapp_process = subprocess.Popen(["python", "main.py"])
+        print("Webapp started...")
+        time.sleep(5)  #wait for the webapp to start
+        print("Sending request to populate database...")
+        response = requests.post("http://localhost:5000/init")
+        if response.status_code == 200:
+            print("Database population started successfully.")
+        else:
+            raise Exception(f"Failed to start database population. Status code: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        print(f"Error starting webapp: {e}")
+        print("you will probably need to populate the database manually by starting the webapp and sending a POST request to /init")
+
+input("Press Enter to exit...")

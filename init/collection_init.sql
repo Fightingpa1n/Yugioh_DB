@@ -1,21 +1,5 @@
 -- ========================================[ Collection Tables ]========================================
-
--- Drop existing tables if they exist (in reverse dependency order)
-DROP TABLE IF EXISTS `collection_decks`;
-DROP TABLE IF EXISTS `collection_tags`;
-DROP TABLE IF EXISTS `decks`;
-DROP TABLE IF EXISTS `tags`;
-DROP TABLE IF EXISTS `collection`;
-DROP TABLE IF EXISTS `users`;
-DROP TABLE IF EXISTS `languages`;
-DROP TABLE IF EXISTS `rarities`;
-DROP TABLE IF EXISTS `rarity_full_card_effects`;
-DROP TABLE IF EXISTS `rarity_special_symbols`;
-DROP TABLE IF EXISTS `rarity_card_image_effects`;
-DROP TABLE IF EXISTS `rarity_card_name_effects`;
-
 -- ======================================== Rarity Stuff ========================================
-
 CREATE TABLE `rarity_card_name_effects` (
     `id` int NOT NULL,
     `name` varchar(255) NOT NULL,
@@ -220,6 +204,7 @@ CREATE TABLE `collection` (
     `user_id` int NOT NULL, -- the user this entry belongs to
     `card_id` int NOT NULL, -- the card this entry is for
     `set_id` int DEFAULT NULL, -- the set this card is from
+    `card_number` varchar(20) DEFAULT NULL, -- the card number in the set
     `rarity_id` int NOT NULL DEFAULT 1, -- the rarity of the card in this entry (default to 'Other')
     `language_id` int DEFAULT NULL, -- the language of the card in this entry
     `condition` int(100) DEFAULT NULL, -- condition of the card (0-100% or null if unknown)
